@@ -32,33 +32,29 @@
       <div class="catalog-sidebar">
         <div class="sidebar-header">
           <h3>Catalogs</h3>
-          <div class="sidebar-header-actions">
-            <el-tooltip content="Register table" placement="bottom" :show-after="400">
-              <button class="btn btn-ghost btn-icon btn-sm" @click="openRegisterTableGlobal">
-                <i class="fa-solid fa-table"></i>
-              </button>
-            </el-tooltip>
-            <el-tooltip content="Create virtual table" placement="bottom" :show-after="400">
-              <button class="btn btn-ghost btn-icon btn-sm" @click="showCreateVirtualTable = true">
-                <i class="fa-solid fa-bolt"></i>
-              </button>
-            </el-tooltip>
-            <el-tooltip content="Register flow" placement="bottom" :show-after="400">
-              <button class="btn btn-ghost btn-icon btn-sm" @click="openRegisterFlowGlobal">
-                <i class="fa-solid fa-file-circle-plus"></i>
-              </button>
-            </el-tooltip>
-            <el-tooltip content="Create Kafka Sync" placement="bottom" :show-after="400">
-              <button class="btn btn-ghost btn-icon btn-sm" @click="showCreateSync = true">
-                <i class="fa-solid fa-rotate"></i>
-              </button>
-            </el-tooltip>
-            <el-tooltip content="New catalog" placement="bottom" :show-after="400">
-              <button class="btn btn-ghost btn-icon btn-sm" @click="showCreateNamespace = true">
-                <i class="fa-solid fa-plus"></i>
-              </button>
-            </el-tooltip>
-          </div>
+          <el-dropdown trigger="click" placement="bottom-end" class="sidebar-new-dropdown">
+            <button class="btn btn-primary btn-sm sidebar-new-btn">
+              <i class="fa-solid fa-plus"></i>
+              New
+              <i class="fa-solid fa-chevron-down caret"></i>
+            </button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item @click="showCreateNamespace = true">
+                  <i class="fa-solid fa-plus fa-fw"></i> New catalog
+                </el-dropdown-item>
+                <el-dropdown-item @click="openRegisterTableGlobal">
+                  <i class="fa-solid fa-table fa-fw"></i> Register table
+                </el-dropdown-item>
+                <el-dropdown-item @click="openRegisterFlowGlobal">
+                  <i class="fa-solid fa-file-circle-plus fa-fw"></i> Register flow
+                </el-dropdown-item>
+                <el-dropdown-item @click="showCreateVirtualTable = true">
+                  <i class="fa-solid fa-bolt fa-fw"></i> Create virtual table
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
 
         <!-- Catalog Tree -->
@@ -92,11 +88,13 @@
               :selected-flow-id="catalogStore.selectedFlowId"
               :selected-artifact-id="catalogStore.selectedArtifactId"
               :selected-table-id="catalogStore.selectedTableId"
+              :selected-namespace-id="catalogStore.selectedNamespaceId"
               :search-query="searchQuery"
               :show-unavailable="showUnavailable"
               @select-flow="selectFlow($event)"
               @select-artifact="selectArtifact($event)"
               @select-table="selectTable($event)"
+              @select-namespace="selectNamespace($event)"
               @table-context-menu="onTableContextMenu($event)"
               @artifact-context-menu="onArtifactContextMenu($event)"
               @flow-context-menu="onFlowContextMenu($event)"
@@ -150,6 +148,12 @@
           @navigate-to-flow="navigateToFlow($event)"
           @delete-artifact="handleDeleteArtifact($event)"
         />
+        <!-- Namespace (catalog) settings view -->
+        <NamespaceDetailPanel
+          v-else-if="catalogStore.selectedNamespace"
+          :namespace="catalogStore.selectedNamespace"
+          @close="handleCloseDetail"
+        />
         <!-- Table detail view -->
         <TableDetailPanel
           v-else-if="catalogStore.selectedTable"
@@ -157,6 +161,8 @@
           :preview="catalogStore.tablePreview"
           :loading-preview="catalogStore.loadingTablePreview"
           :table-history="catalogStore.tableHistory"
+          :loading-table-history="catalogStore.loadingTableHistory"
+          :table-history-stale="catalogStore.tableHistoryStale"
           :selected-version="catalogStore.selectedVersion"
           @close="handleCloseDetail"
           @delete-table="handleDeleteTable($event)"
@@ -165,6 +171,8 @@
           @select-version="catalogStore.selectVersion($event)"
           @query-table="handleQueryTable($event)"
           @recover-from-run="openRunSnapshot($event)"
+          @load-preview="catalogStore.loadSelectedPreview()"
+          @refresh-history="catalogStore.refreshTableHistory()"
         />
         <!-- Flow detail view -->
         <FlowDetailPanel
@@ -322,12 +330,6 @@
         preselectedFlowId = null;
       "
       @create="handleCreateSchedule"
-    />
-
-    <CreateSyncModal
-      :visible="showCreateSync"
-      @close="showCreateSync = false"
-      @created="handleSyncCreated"
     />
 
     <!-- Saved-viz viewer (opened from the catalog tree) -->
@@ -514,6 +516,7 @@ import FlowListItem from "./FlowListItem.vue";
 import FlowDetailPanel from "./FlowDetailPanel.vue";
 import ArtifactDetailPanel from "./ArtifactDetailPanel.vue";
 import TableDetailPanel from "./TableDetailPanel.vue";
+import NamespaceDetailPanel from "./NamespaceDetailPanel.vue";
 import RunDetailPanel from "./RunDetailPanel.vue";
 import StatsPanel from "./StatsPanel.vue";
 import CreateNamespaceModal from "./CreateNamespaceModal.vue";
@@ -523,7 +526,6 @@ import RunOverviewPanel from "./RunOverviewPanel.vue";
 import ScheduleOverviewPanel from "./ScheduleOverviewPanel.vue";
 import ScheduleDetailPanel from "./ScheduleDetailPanel.vue";
 import CreateScheduleModal from "./CreateScheduleModal.vue";
-import CreateSyncModal from "./CreateSyncModal.vue";
 import CreateVirtualTableModal from "./CreateVirtualTableModal.vue";
 import SqlEditorPanel from "./SqlEditorPanel.vue";
 import NotebookPanel from "./NotebookPanel.vue";
@@ -603,7 +605,6 @@ const showRegisterTable = ref(false);
 const registerTableNamespaceId = ref<number | null>(null);
 const showCreateSchedule = ref(false);
 const preselectedFlowId = ref<number | null>(null);
-const showCreateSync = ref(false);
 
 // Saved-viz viewer modal (opened from the catalog tree's Visualizations section).
 const vizViewerOpen = ref(false);
@@ -751,6 +752,13 @@ function selectTable(tableId: number) {
   router.push({
     name: "catalog",
     query: { tab: "catalog", tableId: String(tableId) },
+  });
+}
+
+function selectNamespace(namespaceId: number) {
+  router.push({
+    name: "catalog",
+    query: { tab: "catalog", namespaceId: String(namespaceId) },
   });
 }
 
@@ -1178,12 +1186,6 @@ function handleAddFlowSchedule(flowId: number) {
   showCreateSchedule.value = true;
 }
 
-function handleSyncCreated(flowRegistrationId: number) {
-  showCreateSync.value = false;
-  preselectedFlowId.value = flowRegistrationId;
-  showCreateSchedule.value = true;
-}
-
 async function handleCreateSchedule(body: FlowScheduleCreate) {
   try {
     await CatalogApi.createSchedule(body);
@@ -1346,6 +1348,8 @@ function applyRouteToStore() {
   const artifactId = q.artifactId ? Number(q.artifactId) : null;
   const tableId = q.tableId ? Number(q.tableId) : null;
   const scheduleId = q.scheduleId ? Number(q.scheduleId) : null;
+  const scheduleFlowId = q.scheduleFlowId ? Number(q.scheduleFlowId) : null;
+  const namespaceId = q.namespaceId ? Number(q.namespaceId) : null;
 
   // Update tab (set directly to avoid setActiveTab clearing selections)
   if (catalogStore.activeTab !== tab) {
@@ -1354,6 +1358,14 @@ function applyRouteToStore() {
     else if (tab === "runs" && !flowId) catalogStore.loadRuns();
     else if (tab === "schedules") catalogStore.loadSchedules();
     else if (tab === "catalog") catalogStore.loadTree();
+  }
+
+  // Namespace (catalog) settings is exclusive with all other selections; selectNamespace
+  // clears them, and the chain below leaves namespace untouched when one of them is in the URL.
+  if (namespaceId !== null) {
+    if (namespaceId !== catalogStore.selectedNamespaceId) catalogStore.selectNamespace(namespaceId);
+  } else if (catalogStore.selectedNamespace) {
+    catalogStore.clearNamespaceSelection();
   }
 
   // Handle selections (mutually exclusive: table, artifact, schedule, or flow+run)
@@ -1400,6 +1412,16 @@ function applyRouteToStore() {
   } else if (catalogStore.selectedRunDetail) {
     catalogStore.selectedRunId = null;
     catalogStore.selectedRunDetail = null;
+  }
+
+  // Deep link from the Kafka sync flow: open the schedule modal preselected to
+  // the new flow, then strip the param so it doesn't re-fire on later navigation.
+  if (scheduleFlowId !== null) {
+    preselectedFlowId.value = scheduleFlowId;
+    showCreateSchedule.value = true;
+    const rest = { ...route.query };
+    delete rest.scheduleFlowId;
+    router.replace({ query: rest });
   }
 }
 
@@ -2046,9 +2068,9 @@ onUnmounted(() => {
   color: var(--color-text-primary);
 }
 
-.sidebar-header-actions {
-  display: flex;
-  gap: 4px;
+.sidebar-new-btn .caret {
+  font-size: 0.7em;
+  opacity: 0.85;
 }
 
 .catalog-detail {
