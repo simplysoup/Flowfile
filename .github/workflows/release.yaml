@@ -71,7 +71,7 @@ jobs:
             patchelf
 
       - name: Install Poetry
-        run: pip install poetry
+        run: pip install "poetry==2.4.1"
 
       # macOS release sidecars MUST be built against a non-framework CPython.
       # actions/setup-python ships a framework build (PYTHONFRAMEWORK set), which
@@ -101,9 +101,7 @@ jobs:
           poetry env use "$PYBIN"
 
       - name: Install Python deps
-        run: |
-          poetry lock --no-update || poetry lock
-          poetry install --with build --no-interaction --no-ansi
+        run: poetry install --with build --no-interaction --no-ansi
 
       - name: Build Python services (PyInstaller)
         run: poetry run build_backends
