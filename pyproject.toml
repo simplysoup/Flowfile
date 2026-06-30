@@ -78,6 +78,9 @@ croniter = ">=2.0"
 tzdata = ">=2024.1"
 gitpython = "^3.1.40"
 
+# Geospatial
+duckdb = "^1.2"
+
 
 [tool.poetry.scripts]
 flowfile_worker = "flowfile_worker.main:run"

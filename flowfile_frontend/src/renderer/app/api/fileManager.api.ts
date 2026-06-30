@@ -32,24 +32,18 @@ export class FileManagerApi {
   ): Promise<UploadResponse> {
     const formData = new FormData();
     formData.append("file", file);
-    const response = await axios.post<UploadResponse>(
-      `${API_BASE}/upload`,
-      formData,
-      {
-        headers: { "Content-Type": "multipart/form-data" },
-        onUploadProgress: (e) => {
-          if (onProgress && e.total) {
-            onProgress(Math.round((e.loaded * 100) / e.total));
-          }
-        },
+    const response = await axios.post<UploadResponse>(`${API_BASE}/upload`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      onUploadProgress: (e) => {
+        if (onProgress && e.total) {
+          onProgress(Math.round((e.loaded * 100) / e.total));
+        }
       },
-    );
+    });
     return response.data;
   }
 
   static async deleteFile(filename: string): Promise<void> {
-    await axios.delete(
-      `${API_BASE}/files/${encodeURIComponent(filename)}`,
-    );
+    await axios.delete(`${API_BASE}/files/${encodeURIComponent(filename)}`);
   }
 }

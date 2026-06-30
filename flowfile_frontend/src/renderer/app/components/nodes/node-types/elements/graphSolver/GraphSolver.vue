@@ -64,7 +64,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, onUnmounted, computed, nextTick, defineProps } from "vue";
+import { ref, onMounted, onUnmounted, computed, nextTick } from "vue";
 import { NodeData } from "../../../baseNode/nodeInterfaces";
 import { GraphSolverInput, NodeGraphSolver } from "../../../baseNode/nodeInput";
 import { useNodeStore } from "../../../../../stores/node-store";

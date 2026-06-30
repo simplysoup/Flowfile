@@ -48,8 +48,7 @@ class AuthService {
   setModeFromBackend(mode: string): void {
     if (!this.modeInitialized) {
       if (!this.detectDesktopMode()) {
-        this.isDesktopMode.value =
-          mode === "electron" || mode === "tauri" || mode === "desktop";
+        this.isDesktopMode.value = mode === "electron" || mode === "tauri" || mode === "desktop";
       }
       this.modeInitialized = true;
     }

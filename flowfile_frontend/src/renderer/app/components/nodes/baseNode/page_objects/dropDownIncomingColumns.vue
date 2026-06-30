@@ -24,7 +24,7 @@
 
 <script lang="ts" setup>
 import { useNodeStore } from "../../../../stores/column-store";
-import { onMounted, ref, Ref, computed, defineExpose, defineProps } from "vue";
+import { onMounted, ref, Ref, computed } from "vue";
 
 const props = defineProps({
   selectedValue: {

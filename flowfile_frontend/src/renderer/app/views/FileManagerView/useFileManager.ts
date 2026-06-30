@@ -9,9 +9,7 @@ export function useFileManager() {
   const searchTerm = ref("");
 
   const filteredFiles = computed(() => {
-    const sorted = [...files.value].sort((a, b) =>
-      a.name.localeCompare(b.name),
-    );
+    const sorted = [...files.value].sort((a, b) => a.name.localeCompare(b.name));
     if (!searchTerm.value) return sorted;
     const term = searchTerm.value.toLowerCase();
     return sorted.filter((f) => f.name.toLowerCase().includes(term));
@@ -30,10 +28,7 @@ export function useFileManager() {
     }
   };
 
-  const uploadFile = async (
-    file: File,
-    onProgress?: (percent: number) => void,
-  ) => {
+  const uploadFile = async (file: File, onProgress?: (percent: number) => void) => {
     const result = await FileManagerApi.uploadFile(file, onProgress);
     await loadFiles();
     return result;

@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits, computed, onMounted, ref, nextTick, watch } from "vue";
+import { computed, onMounted, ref, nextTick, watch } from "vue";
 import type { Component } from "vue"; // <-- Import as a TYPE, not a value
 import { getImageUrl } from "../../../features/designer/utils";
 import { useNodeStore } from "../../../stores/column-store";

@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps, defineEmits, watch } from "vue";
+import { ref, watch } from "vue";
 import PopOver from "../PopOver.vue";
 
 interface Option {

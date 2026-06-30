@@ -7,7 +7,7 @@
   <!-- Table Container -->
   <div v-show="!isLoading" class="table-container">
     <!-- Tab Bar (only when artifacts exist for the node) -->
-    <div v-if="nodeArtifacts" class="preview-tabs">
+    <div v-if="nodeArtifacts || hasGeometryColumn" class="preview-tabs">
       <button
         class="preview-tab"
         :class="{ active: activeTab === 'data' }"
@@ -16,6 +16,7 @@
         Data
       </button>
       <button
+        v-if="nodeArtifacts"
         class="preview-tab"
         :class="{ active: activeTab === 'artifacts' }"
         @click="activeTab = 'artifacts'"
@@ -24,6 +25,14 @@
         <span class="dp-tab-badge">{{
           nodeArtifacts.published_count + nodeArtifacts.consumed_count + nodeArtifacts.deleted_count
         }}</span>
+      </button>
+      <button
+        v-if="hasGeometryColumn"
+        class="preview-tab"
+        :class="{ active: activeTab === 'map' }"
+        @click="activeTab = 'map'"
+      >
+        Spatial Map Preview
       </button>
     </div>
 
@@ -142,6 +151,14 @@
         No artifacts recorded for this node.
       </div>
     </div>
+
+    <!-- Map Tab Content -->
+    <div
+      v-if="activeTab === 'map' && hasGeometryColumn && currentNodeId"
+      class="dp-tab-content map-panel"
+    >
+      <SpatialMapPreview :flow-id="resolvedFlowId" :node-id="currentNodeId" />
+    </div>
   </div>
 </template>
 
@@ -153,7 +170,9 @@ import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import { TableExample } from "../../components/nodes/baseNode/nodeInterfaces";
 import { useNodeStore } from "../../stores/column-store";
 import { useFlowStore } from "../../stores/flow-store";
+import { useEditorStore } from "../../stores/editor-store";
 import { useFlowExecution } from "./composables/useFlowExecution";
+import SpatialMapPreview from "../../components/spatial/SpatialMapPreview.vue";
 import { AgGridVue } from "@ag-grid-community/vue3";
 import { GridApi } from "@ag-grid-community/core";
 import { ModuleRegistry } from "@ag-grid-community/core";
@@ -165,8 +184,9 @@ import "@ag-grid-community/styles/ag-theme-balham.css";
 ModuleRegistry.registerModules([ClientSideRowModelModule]);
 
 const isLoading = ref(false);
-const activeTab = ref<"data" | "artifacts">("data");
+const activeTab = ref<"data" | "artifacts" | "map">("data");
 const flowStore = useFlowStore();
+const editorStore = useEditorStore();
 const gridHeight = ref("");
 const rowData = ref<Record<string, any>[] | Record<string, never>>([]);
 const showTable = ref(false);
@@ -196,6 +216,13 @@ const nodeOutputs = computed(() => {
 });
 
 const hasMultipleOutputs = computed(() => nodeOutputs.value.length > 1);
+
+const hasGeometryColumn = computed(() => {
+  if (!dataPreview.value) return false;
+  return dataPreview.value.columns.includes("_flowfile_geom");
+});
+
+const resolvedFlowId = computed(() => props.flowId ?? flowStore.flowId);
 
 async function selectOutput(handle: string) {
   if (handle === selectedOutputHandle.value) return;
@@ -268,6 +295,16 @@ watch(
       !nodeOutputs.value.some((o) => o.id === selectedOutputHandle.value)
     ) {
       selectedOutputHandle.value = DEFAULT_OUTPUT_HANDLE;
+    }
+  },
+);
+
+// Auto-refresh data preview when a flow run completes
+watch(
+  () => editorStore.isRunning,
+  (running, wasRunning) => {
+    if (wasRunning && !running && currentNodeId.value != null) {
+      downloadData(currentNodeId.value);
     }
   },
 );

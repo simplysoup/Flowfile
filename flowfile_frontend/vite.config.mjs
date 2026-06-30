@@ -31,6 +31,7 @@ export default defineConfig({
     server: {
         host: '0.0.0.0',
         port: 8080,
+        allowedHosts: ['devbox-03.eag.environics.ca', '.environics.ca'],
         // Don't silently jump to 8082 when 8080/8081 are busy — fail fast so
         // Tauri's hard-coded devUrl doesn't end up pointing at the wrong port.
         strictPort: true,

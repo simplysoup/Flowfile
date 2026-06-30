@@ -26,12 +26,7 @@ import type {
   AgentCompleteResult,
 } from "../services/aiStreamClient";
 import type { AgentDriftDetail } from "../api/ai.api";
-import type {
-  AgentEvent,
-  AgentOpKind,
-  AgentStage,
-  AgentStoreStatus,
-} from "./ai-agent-store";
+import type { AgentEvent, AgentOpKind, AgentStage, AgentStoreStatus } from "./ai-agent-store";
 
 /** Surface label the store tracks. Repeated here (not imported) to keep
  * the handler module decoupled from the store's reactive declarations. */

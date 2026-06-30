@@ -212,6 +212,7 @@ class NodeExecutor:
 
         Decision logic:
         - local → FULL_LOCAL
+        - geospatial nodes → FULL_LOCAL (always local, no worker serialization)
         - remote + cache_results → REMOTE (caching needs full materialization)
         - remote + narrow transform → LOCAL_WITH_SAMPLING (fast local compute + external sampler)
         - remote → REMOTE
@@ -224,6 +225,11 @@ class NodeExecutor:
         result can be materialized and stored in the cache.
         """
         if run_location == "local":
+            return ExecutionStrategy.FULL_LOCAL
+
+        # Geospatial nodes produce eager DataFrames with WKB binary columns
+        # that cannot be serialized to the worker via LazyFrame protocol.
+        if self.node.node_type in ("spatial_read", "spatial_join", "buffer_geometry"):
             return ExecutionStrategy.FULL_LOCAL
 
         if self.node.node_settings.cache_results:

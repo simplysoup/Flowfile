@@ -13,7 +13,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, defineProps, defineEmits, PropType } from "vue";
+import { ref, watch, PropType } from "vue";
 
 interface Option {
   value: string;

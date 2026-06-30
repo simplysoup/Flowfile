@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, defineProps, defineExpose, toRaw } from "vue";
+import { ref, onMounted, onUnmounted, toRaw } from "vue";
 
 import type {
   IRow,

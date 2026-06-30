@@ -90,7 +90,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, defineProps } from "vue";
+import { ref, computed, watch } from "vue";
 import { format } from "date-fns";
 import { InfoFilled } from "@element-plus/icons-vue";
 import { useNodeStore } from "../../../stores/column-store";

@@ -9,8 +9,13 @@ from flowfile_worker.create.funcs import (
     create_from_path_ndjson,
     create_from_path_parquet,
 )
+from flowfile_worker.create.geo_funcs import (
+    create_from_path_geojson,
+    create_from_path_geoparquet,
+    create_from_path_shapefile,
+)
 
-FileType = Literal["csv", "parquet", "json", "excel", "ipc", "ndjson", "avro"]
+FileType = Literal["csv", "parquet", "json", "excel", "ipc", "ndjson", "avro", "shapefile", "geoparquet", "geojson"]
 
 
 def table_creator_factory_method(file_type: FileType) -> callable:
@@ -29,5 +34,11 @@ def table_creator_factory_method(file_type: FileType) -> callable:
             return create_from_path_ndjson
         case "avro":
             return create_from_path_avro
+        case "shapefile":
+            return create_from_path_shapefile
+        case "geoparquet":
+            return create_from_path_geoparquet
+        case "geojson":
+            return create_from_path_geojson
         case _:
             raise ValueError(f"Unsupported file type: {file_type}")

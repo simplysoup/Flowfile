@@ -15,7 +15,11 @@ export interface RecentFlow {
 const STORAGE_KEY = "flowfile.recentFlows";
 export const MAX_RECENT = 8;
 
-export function upsertRecent(list: RecentFlow[], entry: RecentFlow, max = MAX_RECENT): RecentFlow[] {
+export function upsertRecent(
+  list: RecentFlow[],
+  entry: RecentFlow,
+  max = MAX_RECENT,
+): RecentFlow[] {
   return [entry, ...list.filter((f) => f.path !== entry.path)].slice(0, max);
 }
 

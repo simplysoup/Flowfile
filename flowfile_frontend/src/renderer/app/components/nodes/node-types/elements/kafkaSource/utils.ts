@@ -1,9 +1,6 @@
 import { NodeKafkaSource, KafkaSourceSettings } from "../../../baseNode/nodeInput";
 
-export const createNodeKafkaSource = (
-  flowId: number,
-  nodeId: number,
-): NodeKafkaSource => {
+export const createNodeKafkaSource = (flowId: number, nodeId: number): NodeKafkaSource => {
   const kafkaSettings: KafkaSourceSettings = {
     kafka_connection_id: null,
     kafka_connection_name: null,

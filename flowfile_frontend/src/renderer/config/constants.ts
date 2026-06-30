@@ -17,8 +17,7 @@ const DEFAULT_CORE_PORT = 63578;
  * future `flowfile run ui` mode that still exposes the desktop bridge).
  */
 function resolveCorePort(): number {
-  const injected = (window as Window & { __FLOWFILE_PORTS__?: InjectedPorts })
-    .__FLOWFILE_PORTS__;
+  const injected = (window as Window & { __FLOWFILE_PORTS__?: InjectedPorts }).__FLOWFILE_PORTS__;
   if (injected && typeof injected.core === "number") {
     return injected.core;
   }

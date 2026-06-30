@@ -13,7 +13,8 @@ export const templatesHelp: PageHelpContent = {
         {
           icon: "fa-solid fa-graduation-cap",
           title: "Beginner",
-          description: "Simple flows to learn the basics — reading files, filtering, and writing output",
+          description:
+            "Simple flows to learn the basics — reading files, filtering, and writing output",
         },
         {
           icon: "fa-solid fa-chart-line",
@@ -23,7 +24,8 @@ export const templatesHelp: PageHelpContent = {
         {
           icon: "fa-solid fa-rocket",
           title: "Advanced",
-          description: "Complex pipelines with Python scripts, custom nodes, and external connections",
+          description:
+            "Complex pipelines with Python scripts, custom nodes, and external connections",
         },
         {
           icon: "fa-solid fa-download",
@@ -44,7 +46,8 @@ export const templatesHelp: PageHelpContent = {
         {
           type: "success",
           title: "Modify templates freely",
-          description: "Templates are starting points — customize them to fit your own data and needs.",
+          description:
+            "Templates are starting points — customize them to fit your own data and needs.",
         },
       ],
     },

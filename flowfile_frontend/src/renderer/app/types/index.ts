@@ -10,4 +10,3 @@ export * from "./kernel.types";
 export * from "./catalog.types";
 export * from "./dashboard.types";
 export * from "./project.types";
-

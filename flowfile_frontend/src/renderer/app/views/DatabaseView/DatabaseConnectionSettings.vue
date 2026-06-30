@@ -116,7 +116,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, defineProps, defineEmits, watch } from "vue";
+import { ref, computed, watch } from "vue";
 import type { FullDatabaseConnection } from "./databaseConnectionTypes";
 import { defaultPorts, isFileBased } from "./databaseConnectionTypes";
 import type { DatabaseType } from "./databaseConnectionTypes";

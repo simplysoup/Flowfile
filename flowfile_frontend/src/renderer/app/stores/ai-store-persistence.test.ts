@@ -505,23 +505,20 @@ describe("selectedAgentSurface round-trip", () => {
   // unknown literal and silently fell back to default
   // `"agent_staged"`. The user's selection survived neither refresh
   // nor restart.
-  it.each(["agent_complex", "agent_staged", "agent_live"] as const)(
-    "round-trips %s",
-    (surface) => {
-      const storage = makeStorage();
-      persistAiState(
-        {
-          messages: [],
-          selectedProvider: null,
-          selectedModel: null,
-          selectedAgentSurface: surface,
-        },
-        storage,
-      );
-      const loaded = loadPersistedAiState(storage);
-      expect(loaded.selectedAgentSurface).toBe(surface);
-    },
-  );
+  it.each(["agent_complex", "agent_staged", "agent_live"] as const)("round-trips %s", (surface) => {
+    const storage = makeStorage();
+    persistAiState(
+      {
+        messages: [],
+        selectedProvider: null,
+        selectedModel: null,
+        selectedAgentSurface: surface,
+      },
+      storage,
+    );
+    const loaded = loadPersistedAiState(storage);
+    expect(loaded.selectedAgentSurface).toBe(surface);
+  });
 
   it("rejects an unknown surface value as null (defensive — bad data on disk)", () => {
     const storage = makeStorage();

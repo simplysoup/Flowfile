@@ -189,9 +189,7 @@ export const loadPersistedAiState = (
       ? payload.selectedAgentSurface
       : null,
     verifyPlanCompletion:
-      typeof payload.verifyPlanCompletion === "boolean"
-        ? payload.verifyPlanCompletion
-        : null,
+      typeof payload.verifyPlanCompletion === "boolean" ? payload.verifyPlanCompletion : null,
   };
 };
 

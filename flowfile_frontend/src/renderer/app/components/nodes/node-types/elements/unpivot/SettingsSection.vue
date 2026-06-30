@@ -18,8 +18,6 @@
 </template>
 
 <script lang="ts" setup>
-import { defineProps, defineEmits } from "vue";
-
 const props = defineProps({
   title: { type: String, required: true },
   titleFontSize: { type: String, default: "15px" },

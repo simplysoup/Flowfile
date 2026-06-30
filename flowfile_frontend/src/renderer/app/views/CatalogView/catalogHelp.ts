@@ -13,7 +13,8 @@ export const catalogHelp: PageHelpContent = {
         {
           icon: "fa-solid fa-table",
           title: "Register Tables",
-          description: "Register external data sources as catalog tables for easy discovery and reuse",
+          description:
+            "Register external data sources as catalog tables for easy discovery and reuse",
         },
         {
           icon: "fa-solid fa-diagram-project",
@@ -39,17 +40,20 @@ export const catalogHelp: PageHelpContent = {
         {
           type: "success",
           title: "Use namespaces to organize assets",
-          description: "Group related tables and flows into namespaces for a cleaner catalog structure.",
+          description:
+            "Group related tables and flows into namespaces for a cleaner catalog structure.",
         },
         {
           type: "success",
           title: "Check run history for debugging",
-          description: "The run history panel shows execution logs and errors for each registered flow.",
+          description:
+            "The run history panel shows execution logs and errors for each registered flow.",
         },
         {
           type: "warning",
           title: "Flows must be saved before registering",
-          description: "Save your flow in the Designer first, then register it here for scheduling.",
+          description:
+            "Save your flow in the Designer first, then register it here for scheduling.",
         },
       ],
     },

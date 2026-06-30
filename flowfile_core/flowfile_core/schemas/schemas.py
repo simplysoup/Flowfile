@@ -61,6 +61,9 @@ NODE_TYPE_TO_SETTINGS_CLASS = {
     "apply_model": input_schema.NodeApplyModel,
     "evaluate_model": input_schema.NodeEvaluateModel,
     "wait_for": input_schema.NodeWaitFor,
+    "spatial_read": input_schema.NodeSpatialRead,
+    "spatial_join": input_schema.NodeSpatialJoin,
+    "buffer_geometry": input_schema.NodeBufferGeometry,
 }
 
 
@@ -557,6 +560,19 @@ class NodeTag(str, Enum):
     SCORE = "score"
     EVALUATE = "evaluate"
     METRICS = "metrics"
+
+    # Geospatial
+    SHAPEFILE = "shapefile"
+    GEOJSON = "geojson"
+    GEOPARQUET = "geoparquet"
+    SPATIAL = "spatial"
+    GEOMETRY = "geometry"
+    GIS = "gis"
+    BUFFER = "buffer"
+    INTERSECTS = "intersects"
+    CONTAINS = "contains"
+    WITHIN = "within"
+    MAP = "map"
 
 
 class NodeTemplate(BaseModel):

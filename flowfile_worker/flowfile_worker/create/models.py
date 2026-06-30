@@ -90,6 +90,24 @@ class InputAvroTable(InputTableBase):
     file_type: Literal["avro"] = "avro"
 
 
+class InputShapefileTable(InputTableBase):
+    """Defines settings for reading a Shapefile (.shp)."""
+
+    file_type: Literal["shapefile"] = "shapefile"
+
+
+class InputGeoParquetTable(InputTableBase):
+    """Defines settings for reading a GeoParquet file."""
+
+    file_type: Literal["geoparquet"] = "geoparquet"
+
+
+class InputGeoJsonTable(InputTableBase):
+    """Defines settings for reading a GeoJSON file."""
+
+    file_type: Literal["geojson"] = "geojson"
+
+
 InputTableSettings = Annotated[
     InputCsvTable
     | InputJsonTable
@@ -97,7 +115,10 @@ InputTableSettings = Annotated[
     | InputExcelTable
     | InputIpcTable
     | InputNdjsonTable
-    | InputAvroTable,
+    | InputAvroTable
+    | InputShapefileTable
+    | InputGeoParquetTable
+    | InputGeoJsonTable,
     Field(discriminator="file_type"),
 ]
 
@@ -115,13 +136,13 @@ class ReceivedTable(BaseModel):
     fields: list[MinimalFieldInfo] = Field(default_factory=list)
     abs_file_path: str | None = None
 
-    file_type: Literal["csv", "json", "parquet", "excel", "ipc", "ndjson", "avro"]
+    file_type: Literal["csv", "json", "parquet", "excel", "ipc", "ndjson", "avro", "shapefile", "geoparquet", "geojson"]
 
     table_settings: InputTableSettings
 
     @classmethod
     def create_from_path(
-        cls, path: str, file_type: Literal["csv", "json", "parquet", "excel", "ipc", "ndjson", "avro"] = "csv"
+        cls, path: str, file_type: Literal["csv", "json", "parquet", "excel", "ipc", "ndjson", "avro", "shapefile", "geoparquet", "geojson"] = "csv"
     ):
         """Creates an instance from a file path string."""
         filename = Path(path).name
@@ -134,6 +155,9 @@ class ReceivedTable(BaseModel):
             "ipc": InputIpcTable(),
             "ndjson": InputNdjsonTable(),
             "avro": InputAvroTable(),
+            "shapefile": InputShapefileTable(),
+            "geoparquet": InputGeoParquetTable(),
+            "geojson": InputGeoJsonTable(),
         }
 
         return cls(

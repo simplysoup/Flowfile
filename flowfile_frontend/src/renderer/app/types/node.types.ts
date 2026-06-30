@@ -212,7 +212,22 @@ export type InputTableSettings =
   | InputExcelTable
   | InputIpcTable
   | InputNdjsonTable
-  | InputAvroTable;
+  | InputAvroTable
+  | InputShapefileTable
+  | InputGeoParquetTable
+  | InputGeoJsonTable;
+
+export interface InputShapefileTable {
+  file_type: "shapefile";
+}
+
+export interface InputGeoParquetTable {
+  file_type: "geoparquet";
+}
+
+export interface InputGeoJsonTable {
+  file_type: "geojson";
+}
 
 export function isInputCsvTable(settings: InputTableSettings): settings is InputCsvTable {
   return settings.file_type === "csv";
@@ -674,7 +689,17 @@ export interface ReceivedTable {
   status?: string;
   fields?: MinimalFieldInput[];
   abs_file_path?: string;
-  file_type: "csv" | "json" | "parquet" | "excel" | "ipc" | "ndjson" | "avro";
+  file_type:
+    | "csv"
+    | "json"
+    | "parquet"
+    | "excel"
+    | "ipc"
+    | "ndjson"
+    | "avro"
+    | "shapefile"
+    | "geoparquet"
+    | "geojson";
   table_settings: InputTableSettings;
 }
 
@@ -809,6 +834,23 @@ export interface NodeMultiInput extends NodeBase {
 
 export interface NodeRead extends NodeBase {
   received_file: ReceivedTable;
+}
+
+export interface NodeSpatialRead extends NodeBase {
+  received_file: ReceivedTable;
+}
+
+export interface NodeSpatialJoin extends NodeMultiInput {
+  join_predicate: "intersects" | "contains" | "within";
+  left_geom_col: string;
+  right_geom_col: string;
+}
+
+export interface NodeBufferGeometry extends NodeBase {
+  depending_on_id: number;
+  geom_col: string;
+  distance: number;
+  resolution: number;
 }
 
 export interface NodeOutput extends NodeBase {

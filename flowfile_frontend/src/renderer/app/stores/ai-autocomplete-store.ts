@@ -56,9 +56,7 @@ export const useAiAutocompleteStore = defineStore("aiAutocomplete", () => {
   // pin one. Join-key suggestions are a simple surface, so resolveSurface
   // routes them to the simple tier when split models is on (else the main
   // selection). ``Join.vue`` omits both, so this fills them.
-  const _withDefaults = <T extends { provider?: string; model?: string | null }>(
-    body: T,
-  ): T => {
+  const _withDefaults = <T extends { provider?: string; model?: string | null }>(body: T): T => {
     const aiStore = useAiStore();
     const resolved = aiStore.resolveSurface("settings_autocomplete");
     return {

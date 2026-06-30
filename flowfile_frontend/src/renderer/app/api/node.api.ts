@@ -143,4 +143,23 @@ export class NodeApi {
     );
     return response.data;
   }
+
+  static async getSpatialPreview(
+    flowId: number,
+    nodeId: number,
+    geomCol = "_flowfile_geom",
+    maxPolygons = 5000,
+    tolerance = 0.001,
+  ): Promise<GeoJSON.FeatureCollection> {
+    const response = await axios.get("/spatial/preview", {
+      params: {
+        flow_id: flowId,
+        node_id: nodeId,
+        geom_col: geomCol,
+        max_polygons: maxPolygons,
+        tolerance: tolerance,
+      },
+    });
+    return response.data;
+  }
 }

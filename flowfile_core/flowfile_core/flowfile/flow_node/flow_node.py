@@ -45,6 +45,32 @@ from flowfile_core.schemas.output_model import FileColumn, NodeData, TableExampl
 from flowfile_core.utils.arrow_reader import get_read_top_n
 
 
+def _sanitize_example_data(data: list[dict]) -> list[dict]:
+    """Convert binary geometry values to WKT for display, other bytes to hex."""
+    import duckdb
+
+    con = None
+    for row in data:
+        for key, val in row.items():
+            if isinstance(val, (bytes, bytearray)):
+                if key == "_flowfile_geom":
+                    try:
+                        if con is None:
+                            con = duckdb.connect()
+                            con.execute("LOAD spatial;")
+                        wkt = con.execute(
+                            "SELECT ST_AsText(ST_GeomFromWKB($1::BLOB))", [val]
+                        ).fetchone()[0]
+                        row[key] = wkt
+                    except Exception:
+                        row[key] = val.hex()
+                else:
+                    row[key] = val.hex()
+    if con is not None:
+        con.close()
+    return data
+
+
 class FlowNode:
     """Represents a single node in a data flow graph.
 
@@ -1576,6 +1602,7 @@ class FlowNode:
                 if isinstance(preview_df, pl.LazyFrame):
                     preview_df = preview_df.collect()
                 data = preview_df.to_dicts() if preview_df is not None else []
+                data = _sanitize_example_data(data)
                 schema = [FileColumn.model_validate(c.get_column_repr()) for c in engine.schema]
                 return TableExample(
                     node_id=self.node_id,
@@ -1592,6 +1619,7 @@ class FlowNode:
             example_data_getter = self.results.example_data_generator
             if example_data_getter is not None:
                 data = example_data_getter().to_pylist()
+                data = _sanitize_example_data(data)
                 if data is None:
                     data = []
             else:

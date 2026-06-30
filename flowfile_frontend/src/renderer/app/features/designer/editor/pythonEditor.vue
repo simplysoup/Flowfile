@@ -21,7 +21,7 @@
 <script setup lang="ts">
 import { EditorView, keymap } from "@codemirror/view";
 import { EditorState, Extension, Prec } from "@codemirror/state";
-import { ref, shallowRef, defineExpose, watch } from "vue";
+import { ref, shallowRef, watch } from "vue";
 import { Codemirror } from "vue-codemirror";
 import { python } from "@codemirror/lang-python";
 import { oneDark } from "@codemirror/theme-one-dark";

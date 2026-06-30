@@ -18,7 +18,7 @@
 
 <script lang="ts" setup>
 import { useNodeStore } from "../../../../stores/column-store";
-import { onMounted, ref, Ref, computed, defineExpose } from "vue";
+import { onMounted, ref, Ref, computed } from "vue";
 const selectedValue: Ref<string> = ref("NewField");
 const column_options: Ref<string[]> = ref([]);
 const showOptions: Ref<boolean> = ref(false);

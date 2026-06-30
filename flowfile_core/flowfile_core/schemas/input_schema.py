@@ -184,6 +184,24 @@ class InputAvroTable(InputTableBase):
     file_type: Literal["avro"] = "avro"
 
 
+class InputShapefileTable(InputTableBase):
+    """Defines settings for reading a Shapefile (.shp)."""
+
+    file_type: Literal["shapefile"] = "shapefile"
+
+
+class InputGeoParquetTable(InputTableBase):
+    """Defines settings for reading a GeoParquet file."""
+
+    file_type: Literal["geoparquet"] = "geoparquet"
+
+
+class InputGeoJsonTable(InputTableBase):
+    """Defines settings for reading a GeoJSON file."""
+
+    file_type: Literal["geojson"] = "geojson"
+
+
 # Create the discriminated union (similar to OutputTableSettings)
 InputTableSettings = Annotated[
     InputCsvTable
@@ -192,7 +210,10 @@ InputTableSettings = Annotated[
     | InputExcelTable
     | InputIpcTable
     | InputNdjsonTable
-    | InputAvroTable,
+    | InputAvroTable
+    | InputShapefileTable
+    | InputGeoParquetTable
+    | InputGeoJsonTable,
     Field(discriminator="file_type"),
 ]
 
@@ -210,13 +231,13 @@ class ReceivedTable(BaseModel):
     fields: list[MinimalFieldInfo] = Field(default_factory=list)
     abs_file_path: str | None = None
 
-    file_type: Literal["csv", "json", "parquet", "excel", "ipc", "ndjson", "avro"]
+    file_type: Literal["csv", "json", "parquet", "excel", "ipc", "ndjson", "avro", "shapefile", "geoparquet", "geojson"]
 
     table_settings: InputTableSettings
 
     @classmethod
     def create_from_path(
-        cls, path: str, file_type: Literal["csv", "json", "parquet", "excel", "ipc", "ndjson", "avro"] = "csv"
+        cls, path: str, file_type: Literal["csv", "json", "parquet", "excel", "ipc", "ndjson", "avro", "shapefile", "geoparquet", "geojson"] = "csv"
     ):
         """Creates an instance from a file path string."""
         filename = Path(path).name
@@ -229,6 +250,9 @@ class ReceivedTable(BaseModel):
             "ipc": InputIpcTable(),
             "ndjson": InputNdjsonTable(),
             "avro": InputAvroTable(),
+            "shapefile": InputShapefileTable(),
+            "geoparquet": InputGeoParquetTable(),
+            "geojson": InputGeoJsonTable(),
         }
 
         return cls(
@@ -897,6 +921,39 @@ class NodeRead(NodeBase):
         rf = self.received_file
         name = rf.name or Path(rf.path).name
         return f"{name} ({rf.file_type})"
+
+
+class NodeSpatialRead(NodeBase):
+    """Settings for a node that reads geospatial data from a file."""
+
+    received_file: ReceivedTable
+
+    def get_default_description(self) -> str:
+        rf = self.received_file
+        name = rf.name or Path(rf.path).name
+        return f"{name} ({rf.file_type})"
+
+
+class NodeSpatialJoin(NodeMultiInput):
+    """Settings for a spatial join node using geometric predicates."""
+
+    join_predicate: Literal["intersects", "contains", "within"] = "intersects"
+    left_geom_col: str = "_flowfile_geom"
+    right_geom_col: str = "_flowfile_geom"
+
+    def get_default_description(self) -> str:
+        return f"Spatial join ({self.join_predicate})"
+
+
+class NodeBufferGeometry(NodeSingleInput):
+    """Settings for a buffer geometry node."""
+
+    geom_col: str = "_flowfile_geom"
+    distance: float = 0.001
+    resolution: int = 16
+
+    def get_default_description(self) -> str:
+        return f"Buffer {self.distance} on {self.geom_col}"
 
 
 class DatabaseConnection(BaseModel):

@@ -33,8 +33,7 @@ export function useDashboardDatasources(
     if (vizId in vizToTable.value) return;
     try {
       const viz = await CatalogApi.getVisualization(vizId);
-      vizToTable.value[vizId] =
-        viz.source_type === "table" ? (viz.catalog_table_id ?? null) : null;
+      vizToTable.value[vizId] = viz.source_type === "table" ? (viz.catalog_table_id ?? null) : null;
       vizNameById.value[vizId] = viz.name;
     } catch (err) {
       console.warn(`[dashboard] could not fetch viz ${vizId}:`, err);
@@ -58,19 +57,13 @@ export function useDashboardDatasources(
 
   const refresh = async () => {
     const vizIds = Array.from(
-      new Set(
-        layout.value.tiles.map((t) => t.viz_id).filter((id): id is number => id != null),
-      ),
+      new Set(layout.value.tiles.map((t) => t.viz_id).filter((id): id is number => id != null)),
     );
     loading.value = true;
     try {
       await Promise.all(vizIds.map(fetchViz));
       const tableIds = Array.from(
-        new Set(
-          vizIds
-            .map((v) => vizToTable.value[v])
-            .filter((id): id is number => id != null),
-        ),
+        new Set(vizIds.map((v) => vizToTable.value[v]).filter((id): id is number => id != null)),
       );
       await Promise.all(tableIds.map(fetchTable));
     } finally {

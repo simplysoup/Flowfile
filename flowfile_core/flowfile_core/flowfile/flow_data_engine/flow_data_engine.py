@@ -30,6 +30,7 @@ from flowfile_core.flowfile.flow_data_engine.cloud_storage_reader import (
     get_first_file_from_cloud_dir,
 )
 from flowfile_core.flowfile.flow_data_engine.create import funcs as create_funcs
+from flowfile_core.flowfile.flow_data_engine.create import geo_funcs
 from flowfile_core.flowfile.flow_data_engine.flow_file_column.main import (
     FlowfileColumn,
     assert_if_flowfile_schema,
@@ -1272,6 +1273,9 @@ class FlowDataEngine:
             "ipc": create_funcs.create_from_path_ipc,
             "ndjson": create_funcs.create_from_path_ndjson,
             "avro": create_funcs.create_from_path_avro,
+            "shapefile": geo_funcs.create_from_path_shapefile,
+            "geoparquet": geo_funcs.create_from_path_geoparquet,
+            "geojson": geo_funcs.create_from_path_geojson,
         }
 
         handler = file_type_handlers.get(received_table.file_type)

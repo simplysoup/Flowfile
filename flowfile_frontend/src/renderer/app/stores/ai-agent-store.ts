@@ -110,13 +110,7 @@ export type AgentStage =
 
 /** Op kind chosen by stage 0 (``classify_intent``). Mirrors
  * ``PlannerOpKind`` server-side. */
-export type AgentOpKind =
-  | "add"
-  | "modify"
-  | "delete"
-  | "connect"
-  | "disconnect"
-  | "other";
+export type AgentOpKind = "add" | "modify" | "delete" | "connect" | "disconnect" | "other";
 
 const isAbortError = (err: unknown): boolean => {
   if (err instanceof DOMException && err.name === "AbortError") return true;
@@ -142,7 +136,9 @@ export const useAiAgentStore = defineStore("ai-agent", () => {
   const stage = ref<AgentStage>("classify");
   const pickedOpKind = ref<AgentOpKind | null>(null);
   const pickedNodeType = ref<string | null>(null);
-  const currentSurface = ref<"agent" | "agent_complex" | "agent_staged" | "agent_live" | null>(null);
+  const currentSurface = ref<"agent" | "agent_complex" | "agent_staged" | "agent_live" | null>(
+    null,
+  );
 
   // agent_live post-run layout-reorganize prompt. Counts the nodes the
   // in-flight (or just-finished) agent_live session committed live to
@@ -267,15 +263,17 @@ export const useAiAgentStore = defineStore("ai-agent", () => {
     // other lazily but TS module-cycle detection chokes on the static
     // form). ``lastInteractionKind`` is exposed as a writable ref on
     // the ai-store for exactly this cross-store flip.
-    import("./ai-store").then(({ useAiStore }) => {
-      try {
-        useAiStore().lastInteractionKind = "agent";
-      } catch {
-        /* store unavailable in test contexts */
-      }
-    }).catch(() => {
-      /* dynamic-import resolution failed; non-fatal */
-    });
+    import("./ai-store")
+      .then(({ useAiStore }) => {
+        try {
+          useAiStore().lastInteractionKind = "agent";
+        } catch {
+          /* store unavailable in test contexts */
+        }
+      })
+      .catch(() => {
+        /* dynamic-import resolution failed; non-fatal */
+      });
   });
 
   // Per-flow swap. When the user opens a different flow, freeze the
@@ -383,8 +381,7 @@ export const useAiAgentStore = defineStore("ai-agent", () => {
           /* editor store not registered in this context (e.g. tests) */
         }
       },
-      setCurrentDiff: (payload) =>
-        useAiDiffStore().setCurrentDiff(payload as unknown as never),
+      setCurrentDiff: (payload) => useAiDiffStore().setCurrentDiff(payload as unknown as never),
     });
 
   const start = async (body: AgentStartRequest): Promise<void> => {

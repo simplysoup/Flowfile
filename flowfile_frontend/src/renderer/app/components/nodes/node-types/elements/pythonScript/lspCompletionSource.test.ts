@@ -78,7 +78,9 @@ describe("createLspCompletionSource", () => {
   });
 
   it("sends 1-based line / 0-based column and the full cell code", async () => {
-    mockComplete.mockResolvedValue({ items: [{ label: "x", type: "instance", detail: "", documentation: "" }] });
+    mockComplete.mockResolvedValue({
+      items: [{ label: "x", type: "instance", detail: "", documentation: "" }],
+    });
     await source({ flowId: -99 })(ctxFor("import polars as pl\npl.", 23));
     expect(mockComplete).toHaveBeenCalledTimes(1);
     const [kernelId, payload] = mockComplete.mock.calls[0];
@@ -90,7 +92,9 @@ describe("createLspCompletionSource", () => {
   });
 
   it("sets from to the start of the in-progress word", async () => {
-    mockComplete.mockResolvedValue({ items: [{ label: "select", type: "function", detail: "", documentation: "" }] });
+    mockComplete.mockResolvedValue({
+      items: [{ label: "select", type: "function", detail: "", documentation: "" }],
+    });
     const result = await source()(ctxFor("df.sel", 6));
     expect(result!.from).toBe(3); // start of "sel"
   });

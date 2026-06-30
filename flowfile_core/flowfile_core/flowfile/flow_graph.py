@@ -4500,6 +4500,169 @@ class FlowGraph:
         return self
 
     @with_history_capture(HistoryActionType.UPDATE_SETTINGS)
+    def add_spatial_read(self, input_file: input_schema.NodeSpatialRead) -> "FlowGraph":
+        """Adds a node to read geospatial data (Shapefile, GeoParquet, GeoJSON)."""
+        received_file = input_file.received_file
+        input_file.received_file.set_absolute_filepath()
+
+        def _func():
+            input_file.received_file.set_absolute_filepath()
+            input_data = FlowDataEngine.create_from_path(input_file.received_file)
+            input_data.name = input_file.received_file.name
+            return input_data
+
+        node = self.get_node(input_file.node_id)
+        schema_callback = None
+
+        if received_file.fields:
+
+            def schema_callback():
+                return [FlowfileColumn.from_input(f.name, f.data_type) for f in received_file.fields]
+
+        elif received_file.abs_file_path and Path(received_file.abs_file_path).exists():
+
+            def schema_callback():
+                try:
+                    input_data = FlowDataEngine.create_from_path(input_file.received_file)
+                    return input_data.schema
+                except Exception:
+                    return []
+
+        if node:
+            node.node_type = "spatial_read"
+            node.name = "spatial_read"
+            node.function = _func
+            node.setting_input = input_file
+            self.add_node_to_starting_list(node)
+            if schema_callback is not None:
+                node.schema_callback = schema_callback
+                node.user_provided_schema_callback = schema_callback
+        else:
+            node = FlowNode(
+                input_file.node_id,
+                function=_func,
+                setting_input=input_file,
+                name="spatial_read",
+                node_type="spatial_read",
+                parent_uuid=self.uuid,
+            )
+            self._node_db[input_file.node_id] = node
+            self._node_ids.append(input_file.node_id)
+            self.add_node_to_starting_list(node)
+            if schema_callback is not None:
+                node.schema_callback = schema_callback
+                node.user_provided_schema_callback = schema_callback
+        return self
+
+    @with_history_capture(HistoryActionType.UPDATE_SETTINGS)
+    def add_spatial_join(self, input_file: input_schema.NodeSpatialJoin) -> "FlowGraph":
+        """Adds a spatial join node that joins two datasets by geometric predicate."""
+        import duckdb
+
+        def _func(left_engine: FlowDataEngine, right_engine: FlowDataEngine):
+            left_df = left_engine.collect()
+            right_df = right_engine.collect()
+            left_col = input_file.left_geom_col
+            right_col = input_file.right_geom_col
+
+            predicate_map = {
+                "intersects": "ST_Intersects",
+                "contains": "ST_Contains",
+                "within": "ST_Within",
+            }
+            predicate_fn = predicate_map[input_file.join_predicate]
+
+            # Build right column select, dropping geom and renaming collisions
+            left_cols = set(left_df.columns)
+            right_cols = [c for c in right_df.columns if c != right_col]
+            right_select_parts = []
+            for c in right_cols:
+                if c in left_cols:
+                    right_select_parts.append(f'r."{c}" AS "{c}_right"')
+                else:
+                    right_select_parts.append(f'r."{c}"')
+
+            right_select = ""
+            if right_select_parts:
+                right_select = ", " + ", ".join(right_select_parts)
+
+            con = duckdb.connect()
+            con.execute("LOAD spatial;")
+            arrow = con.execute(f"""
+                SELECT l.*{right_select}
+                FROM left_df l, right_df r
+                WHERE {predicate_fn}(
+                    ST_GeomFromWKB(l."{left_col}"),
+                    ST_GeomFromWKB(r."{right_col}")
+                )
+            """).arrow()
+            con.close()
+
+            result = pl.from_arrow(arrow)
+            return FlowDataEngine(result)
+
+        node = self.get_node(input_file.node_id)
+        if node:
+            node.node_type = "spatial_join"
+            node.name = "spatial_join"
+            node.function = _func
+            node.setting_input = input_file
+        else:
+            node = FlowNode(
+                input_file.node_id,
+                function=_func,
+                setting_input=input_file,
+                name="spatial_join",
+                node_type="spatial_join",
+                parent_uuid=self.uuid,
+            )
+            self._node_db[input_file.node_id] = node
+            self._node_ids.append(input_file.node_id)
+        return self
+
+    @with_history_capture(HistoryActionType.UPDATE_SETTINGS)
+    def add_buffer_geometry(self, input_file: input_schema.NodeBufferGeometry) -> "FlowGraph":
+        """Adds a buffer geometry node that generates distance buffers around geometries."""
+        import duckdb
+
+        def _func(input_engine: FlowDataEngine):
+            df = input_engine.collect()
+            geom_col = input_file.geom_col
+            distance = input_file.distance
+
+            con = duckdb.connect()
+            con.execute("LOAD spatial;")
+            arrow = con.execute(f"""
+                SELECT * REPLACE (
+                    ST_AsWKB(ST_Buffer(ST_GeomFromWKB("{geom_col}"), {distance})) AS "{geom_col}"
+                )
+                FROM df
+            """).arrow()
+            con.close()
+
+            result = pl.from_arrow(arrow)
+            return FlowDataEngine(result)
+
+        node = self.get_node(input_file.node_id)
+        if node:
+            node.node_type = "buffer_geometry"
+            node.name = "buffer_geometry"
+            node.function = _func
+            node.setting_input = input_file
+        else:
+            node = FlowNode(
+                input_file.node_id,
+                function=_func,
+                setting_input=input_file,
+                name="buffer_geometry",
+                node_type="buffer_geometry",
+                parent_uuid=self.uuid,
+            )
+            self._node_db[input_file.node_id] = node
+            self._node_ids.append(input_file.node_id)
+        return self
+
+    @with_history_capture(HistoryActionType.UPDATE_SETTINGS)
     def add_datasource(self, input_file: input_schema.NodeDatasource | input_schema.NodeManualInput) -> "FlowGraph":
         """Adds a data source node to the graph.
 

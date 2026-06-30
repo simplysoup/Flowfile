@@ -31,9 +31,7 @@ const isSemantic = (s: unknown): s is SemanticType =>
  *
  * Per-viz fetches are cached locally — the same viz_id only hits the
  * worker once. */
-export function useDashboardFields(
-  layout: Ref<DashboardLayout> | ComputedRef<DashboardLayout>,
-) {
+export function useDashboardFields(layout: Ref<DashboardLayout> | ComputedRef<DashboardLayout>) {
   const fieldsByVizId = ref<Record<number, RawField[]>>({});
   const loading = ref(false);
 
@@ -50,11 +48,7 @@ export function useDashboardFields(
 
   const refresh = async () => {
     const ids = Array.from(
-      new Set(
-        layout.value.tiles
-          .map((t) => t.viz_id)
-          .filter((id): id is number => id != null),
-      ),
+      new Set(layout.value.tiles.map((t) => t.viz_id).filter((id): id is number => id != null)),
     );
     loading.value = true;
     try {
@@ -108,9 +102,7 @@ export function useDashboardFields(
   return { availableFields, loading, refresh, tileHasField };
 }
 
-export const semanticToKind = (
-  s: SemanticType,
-): "categorical" | "numeric_range" | "date_range" => {
+export const semanticToKind = (s: SemanticType): "categorical" | "numeric_range" | "date_range" => {
   if (s === "quantitative") return "numeric_range";
   if (s === "temporal") return "date_range";
   return "categorical";

@@ -198,6 +198,20 @@ for _pkg in _polars_plugins:
     except Exception as _e:
         print(f"WARN: could not collect plugin {{_pkg}}: {{_e}}")
 
+# Geospatial: DuckDB bundles its own spatial extension (GEOS/GDAL/PROJ included).
+# collect_dynamic_libs ensures the native duckdb .so/.dll is bundled.
+_geo_packages = ['duckdb']
+geo_hiddenimports = []
+geo_datas = []
+geo_binaries = []
+for _pkg in _geo_packages:
+    try:
+        geo_hiddenimports += collect_submodules(_pkg)
+        geo_datas += collect_data_files(_pkg)
+        geo_binaries += collect_dynamic_libs(_pkg)
+    except Exception as _e:
+        print(f"WARN: could not collect {{_pkg}}: {{_e}}")
+
 # litellm ships JSON data files (model_prices_and_context_window_backup.json,
 # policy_templates_backup.json, ...) read during `import litellm` via
 # importlib.resources.files("litellm"). collect_data_files grabs them;
@@ -239,9 +253,9 @@ with open('connectorx_hook.py', 'w') as f:
 
 a = Analysis(
     [r'{os.path.join(directory, script_name)}'],
-    binaries=plugin_binaries + ai_binaries,
-    datas=numpy_datas + pyarrow_datas + connectorx_datas + alembic_datas + code_generator_datas + demo_flows_datas + plugin_datas + litellm_datas + ai_datas,
-    hiddenimports={hidden_imports} + plugin_hiddenimports + litellm_hiddenimports + ai_hiddenimports + [
+    binaries=plugin_binaries + ai_binaries + geo_binaries,
+    datas=numpy_datas + pyarrow_datas + connectorx_datas + alembic_datas + code_generator_datas + demo_flows_datas + plugin_datas + litellm_datas + ai_datas + geo_datas,
+    hiddenimports={hidden_imports} + plugin_hiddenimports + litellm_hiddenimports + ai_hiddenimports + geo_hiddenimports + [
         'numpy',
         'numpy.core._dtype_ctypes',
         'numpy.core._methods',
@@ -436,6 +450,8 @@ def main():
         "polars_grouper",
         "polars_simed",
         "polars_expr_transformer",
+        # Geospatial — DuckDB spatial extension handles all geo operations.
+        "duckdb",
     ]
 
     builds_successful = True

@@ -9,9 +9,7 @@ export const isNumericDtype = (dtype: string | null | undefined): boolean =>
 export const isTemporalDtype = (dtype: string | null | undefined): boolean =>
   !!dtype && TEMPORAL_RE.test(dtype.trim());
 
-export const dtypeToDefaultFilterKind = (
-  dtype: string | null | undefined,
-): DashboardFilterKind => {
+export const dtypeToDefaultFilterKind = (dtype: string | null | undefined): DashboardFilterKind => {
   if (isNumericDtype(dtype)) return "numeric_range";
   if (isTemporalDtype(dtype)) return "date_range";
   return "categorical";

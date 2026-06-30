@@ -26,9 +26,9 @@ export function useNodeValidation() {
       });
     }
 
-  if (!nodeMetadata.node_category.trim()) {
-    errors.push({ field: "node_category", message: "Category is required" });
-  }
+    if (!nodeMetadata.node_category.trim()) {
+      errors.push({ field: "node_category", message: "Category is required" });
+    }
 
     const sectionNames = new Set<string>();
     sections.forEach((section, index) => {
