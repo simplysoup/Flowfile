@@ -260,7 +260,7 @@ jobs:
             artifacts/signature-*/**/*.sig
           )
           if [ "${#files[@]}" -eq 0 ]; then
-            echo "No release assets found" >&2
+            echo "No release assets found under artifacts/bundle-*/**/Flowfile_* or artifacts/signature-*/**/*.sig" >&2
             exit 1
           fi
           {
