@@ -175,7 +175,7 @@ jobs:
         env:
           # The repo's master_key for embedded Fernet auth
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: npx tauri build --target ${{ matrix.target }} --config src-tauri/tauri.no-updater.conf.json ${{ matrix.tauri_args }}
+        run: npx tauri build --target ${{ matrix.target }} --config src-tauri/tauri.no-updater.conf.json --no-sign ${{ matrix.tauri_args }}
 
       # Tauri names the macOS updater bundle `Flowfile.app.tar.gz(.sig)` with NO
       # architecture in the filename, so the arm64 and x86_64 builds produce
