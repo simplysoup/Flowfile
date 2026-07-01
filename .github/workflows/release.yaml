@@ -149,7 +149,8 @@ jobs:
 
       # Allow workflow_dispatch runs to verify packaging even when release-only
       # signing credentials are absent. Disable updater artifacts and skip
-      # macOS codesigning/notarization on those manual smoke builds.
+      # macOS codesigning/notarization on those manual builds; the release job
+      # still publishes the resulting bundles as a prerelease.
       - name: Build Tauri app (macOS, unsigned)
         if: ${{ startsWith(matrix.platform, 'macos') && !startsWith(github.ref, 'refs/tags/') }}
         working-directory: flowfile_frontend
@@ -220,8 +221,26 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     steps:
+      - name: Resolve release metadata
+        id: release_meta
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            echo "tag_name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            echo "release_name=Release ${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            if [[ "${GITHUB_REF_NAME}" == *-* ]]; then
+              echo "prerelease=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "prerelease=false" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "tag_name=desktop-build-${GITHUB_RUN_ID}" >> "$GITHUB_OUTPUT"
+            echo "release_name=Desktop build ${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -231,17 +250,36 @@ jobs:
         run: |
           ls -R artifacts || true
 
+      - name: Collect release assets
+        id: release_assets
+        shell: bash
+        run: |
+          shopt -s globstar nullglob
+          files=(
+            artifacts/bundle-*/**/Flowfile_*
+            artifacts/signature-*/**/*.sig
+          )
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No release assets found under artifacts/bundle-*/**/Flowfile_* or artifacts/signature-*/**/*.sig" >&2
+            exit 1
+          fi
+          {
+            echo "files<<EOF"
+            printf '%s\n' "${files[@]}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          printf '%s\n' "${files[@]}"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref_name }}
-          name: "Release ${{ github.ref_name }}"
+          tag_name: ${{ steps.release_meta.outputs.tag_name }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ steps.release_meta.outputs.release_name }}
           # Tags with a suffix (v0.10.1-rc.1, -test, -beta) are flagged as
           # GitHub pre-releases so test builds never become the public "Latest".
-          prerelease: ${{ contains(github.ref_name, '-') }}
-          files: |
-            artifacts/bundle-*/**/Flowfile_*
-            artifacts/signature-*/**/*.sig
+          prerelease: ${{ steps.release_meta.outputs.prerelease == 'true' }}
+          files: ${{ steps.release_assets.outputs.files }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -251,6 +289,7 @@ jobs:
       # release. We do not automate that here yet — Tauri's updater only
       # activates once both files are present and signed.
       - name: Reminder — manual latest.json upload required
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           echo "::notice::Attach latest.json to the release after this workflow"
           echo "completes. See flowfile_frontend/src-tauri/SIGNING.md for the schema."
