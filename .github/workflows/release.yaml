@@ -13,6 +13,7 @@ jobs:
   build:
     env:
       APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+      HAS_APPLE_SIGNING: ${{ secrets.APPLE_CERTIFICATE != '' && secrets.APPLE_SIGNING_IDENTITY != '' && secrets.APPLE_ID != '' && secrets.APPLE_PASSWORD != '' && secrets.APPLE_TEAM_ID != '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -114,7 +115,7 @@ jobs:
         run: npm ci
 
       - name: Import Apple certs (macOS)
-        if: ${{ startsWith(matrix.platform, 'macos') && env.APPLE_CERTIFICATE != '' }}
+        if: ${{ startsWith(matrix.platform, 'macos') && env.HAS_APPLE_SIGNING == 'true' }}
         uses: apple-actions/import-codesign-certs@v3
         with:
           p12-file-base64: ${{ secrets.APPLE_CERTIFICATE }}
@@ -125,12 +126,13 @@ jobs:
         run: echo "/usr/bin" >> "$GITHUB_PATH"
 
       - name: Sign bundled sidecars (macOS)
-        if: ${{ startsWith(matrix.platform, 'macos') && env.APPLE_CERTIFICATE != '' }}
+        if: ${{ startsWith(matrix.platform, 'macos') && env.HAS_APPLE_SIGNING == 'true' }}
         env:
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
         run: bash tools/sign_macos_sidecars.sh
 
-      - name: Build Tauri app
+      - name: Build Tauri app (macOS, signed)
+        if: ${{ startsWith(matrix.platform, 'macos') && env.HAS_APPLE_SIGNING == 'true' }}
         working-directory: flowfile_frontend
         env:
           # Updater signing (all platforms)
@@ -141,6 +143,31 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # The repo's master_key for embedded Fernet auth
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: npx tauri build --target ${{ matrix.target }} ${{ matrix.tauri_args }}
+
+      # Allow workflow_dispatch runs without Apple secrets to verify that macOS
+      # packaging still builds. Passing APPLE_* as empty strings makes Tauri
+      # invoke codesign with identity "", which fails before bundling completes.
+      - name: Build Tauri app (macOS, unsigned)
+        if: ${{ startsWith(matrix.platform, 'macos') && env.HAS_APPLE_SIGNING != 'true' }}
+        working-directory: flowfile_frontend
+        env:
+          # Updater signing (all platforms)
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # The repo's master_key for embedded Fernet auth
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: npx tauri build --target ${{ matrix.target }} ${{ matrix.tauri_args }}
+
+      - name: Build Tauri app (non-macOS)
+        if: ${{ !startsWith(matrix.platform, 'macos') }}
+        working-directory: flowfile_frontend
+        env:
+          # Updater signing (all platforms)
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           # The repo's master_key for embedded Fernet auth
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: npx tauri build --target ${{ matrix.target }} ${{ matrix.tauri_args }}
