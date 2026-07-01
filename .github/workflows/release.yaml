@@ -132,7 +132,7 @@ jobs:
         run: bash tools/sign_macos_sidecars.sh
 
       - name: Build Tauri app (macOS, signed)
-        if: ${{ startsWith(matrix.platform, 'macos') && env.HAS_APPLE_SIGNING == 'true' }}
+        if: ${{ startsWith(matrix.platform, 'macos') && startsWith(github.ref, 'refs/tags/') }}
         working-directory: flowfile_frontend
         env:
           # Updater signing (all platforms)
@@ -147,11 +147,19 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: npx tauri build --target ${{ matrix.target }} ${{ matrix.tauri_args }}
 
-      # Allow workflow_dispatch runs without Apple secrets to verify that macOS
-      # packaging still builds. Passing APPLE_* as empty strings makes Tauri
-      # invoke codesign with identity "", which fails before bundling completes.
+      # Allow workflow_dispatch runs to verify packaging even when release-only
+      # signing credentials are absent. Disable updater artifacts and skip
+      # macOS codesigning/notarization on those manual smoke builds.
       - name: Build Tauri app (macOS, unsigned)
-        if: ${{ startsWith(matrix.platform, 'macos') && env.HAS_APPLE_SIGNING != 'true' }}
+        if: ${{ startsWith(matrix.platform, 'macos') && !startsWith(github.ref, 'refs/tags/') }}
+        working-directory: flowfile_frontend
+        env:
+          # The repo's master_key for embedded Fernet auth
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: npx tauri build --target ${{ matrix.target }} --no-sign --config src-tauri/tauri.no-updater.conf.json ${{ matrix.tauri_args }}
+
+      - name: Build Tauri app (non-macOS)
+        if: ${{ !startsWith(matrix.platform, 'macos') && startsWith(github.ref, 'refs/tags/') }}
         working-directory: flowfile_frontend
         env:
           # Updater signing (all platforms)
@@ -161,16 +169,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: npx tauri build --target ${{ matrix.target }} ${{ matrix.tauri_args }}
 
-      - name: Build Tauri app (non-macOS)
-        if: ${{ !startsWith(matrix.platform, 'macos') }}
+      - name: Build Tauri app (non-macOS, unsigned)
+        if: ${{ !startsWith(matrix.platform, 'macos') && !startsWith(github.ref, 'refs/tags/') }}
         working-directory: flowfile_frontend
         env:
-          # Updater signing (all platforms)
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           # The repo's master_key for embedded Fernet auth
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: npx tauri build --target ${{ matrix.target }} ${{ matrix.tauri_args }}
+        run: npx tauri build --target ${{ matrix.target }} --config src-tauri/tauri.no-updater.conf.json ${{ matrix.tauri_args }}
 
       # Tauri names the macOS updater bundle `Flowfile.app.tar.gz(.sig)` with NO
       # architecture in the filename, so the arm64 and x86_64 builds produce
